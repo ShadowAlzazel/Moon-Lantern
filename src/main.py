@@ -17,7 +17,7 @@ class Game:
                     pygame.quit()
                     sys.exit()
 
-            dtime = self.clock.tick() / 1000
+            dtime = self.clock.tick(FPS) / 1000
             self.level.run(dtime)
             pygame.display.update()
 
