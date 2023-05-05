@@ -11,3 +11,7 @@ class Generic(pygame.sprite.Sprite):
 class Flora(Generic):
     def __init__(self, pos, surface, groups):
         super().__init__(pos, surface, groups)
+
+class Fauna(Generic):
+    def __init__(self, pos, surface, groups):
+        super().__init__(pos, surface, groups)
