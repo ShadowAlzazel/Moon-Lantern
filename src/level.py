@@ -22,11 +22,11 @@ class Level:
             zlayer=LAYERS['ground']    
         )
 
-    def run(self, dtime):
+    async def run(self, dtime):
         # Sprites
         self.display_surface.fill("Black")
         #self.all_sprites.draw(self.display_surface)
-        self.all_sprites.camera_draw()
+        await self.all_sprites.camera_draw()
         self.all_sprites.update(dtime)
 
 class CameraGroup(pygame.sprite.Group):
@@ -36,14 +36,14 @@ class CameraGroup(pygame.sprite.Group):
 
     async def camera_draw(self):
         for layer in LAYERS.values():
-            current_layer = layer
-            render_tasks = [asyncio.create_task(render_sprite(sprite)) for sprite in self.sprites]
+            self.current_layer = layer
+            render_tasks = [asyncio.create_task(self.render_sprite(sprite)) for sprite in self.sprites()]
             done, pending = await asyncio.wait(render_tasks)
 
             #for sprite in self.sprites():
-            #    if sprite.zlayer == layer:
-            #        self.display_surface.blit(sprite.image, sprite.rect)
+            #   if sprite.zlayer == layer:
+            #    self.display_surface.blit(sprite.image, sprite.rect)
     
-    async def render_sprite(self):
-        if sprite.zlayer == current_layer:
+    async def render_sprite(self, sprite):
+        if sprite.zlayer == self.current_layer:
             self.display_surface.blit(sprite.image, sprite.rect)
