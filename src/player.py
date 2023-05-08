@@ -52,6 +52,13 @@ class Player(pygame.sprite.Sprite):
             # Note: If in moon_lantern dir use below if in src directory use -> full_path = f'../assets/character/{animation}'
             full_path = f'assets/character/{animation}'
             self.animations[animation] = import_folder(full_path)
+    # PIPELINE:
+    # First import assets 
+    # Find a png called map._.png; use parser and walk
+    # Use that map with the atlas; find map like -> map.[atlas_name]_[animation].png 
+    # Match pixels from map to atlas; use -> atlas.[animation].png
+    # Export as Surface into animations
+    # Events can update the exported surface like mud, rain, or new clothes
 
 
     def animate(self, dtime):
