@@ -3,12 +3,13 @@ from settings import *
 from support import *
 from timer import Timer
 from inventory import Inventory
+from item import Item
 
 class Player(pygame.sprite.Sprite):
     def __init__(self, pos, group):
         super().__init__(group)
         # Assets
-        self.import_assets()
+        self._import_assets()
         # Sprite
         self.status = 'down_idle'
         self.frame_index = 0    
@@ -29,20 +30,10 @@ class Player(pygame.sprite.Sprite):
             'q_item': Timer(350, self.use_item),
             'e_item': Timer(350, self.use_item)
         }
-        # Inventory
-        self.inventory = Inventory(9)
-
-
-    def use_item(self):
-        print("IDLE")  
-
-
-    def use_tool(self):
-        print("IDLE")
-
-
+        self._setup_inventory()
+        
     # TODO: Use Maps and Asset Postproccessor!
-    def import_assets(self):
+    def _import_assets(self):
         # These are the character sub folders
         self.animations = {
             'up': [], 'down': [], 'left': [], 'right': [],
@@ -59,6 +50,20 @@ class Player(pygame.sprite.Sprite):
     # Match pixels from map to atlas; use -> atlas.[animation].png
     # Export as Surface into animations
     # Events can update the exported surface like mud, rain, or new clothes
+
+    def _setup_inventory(self):
+        # Inventory
+        self.inventory = Inventory(9)
+        self.inventory.slots['main_hand'] = 1
+
+
+    def use_item(self):
+        print("IDLE")  
+
+
+    def use_tool(self):
+        if self.inventory.slots['main_hand']:
+            print("USE TOOL")
 
 
     def animate(self, dtime):
@@ -105,7 +110,8 @@ class Player(pygame.sprite.Sprite):
             self.status = f'{self.status.split("_")[0]}_idle'
         # Check tool
         if self.timers['main_hand'].active:
-            print("USING TOOL")
+            #print("USING TOOL")
+            pass
 
 
     def move(self, dtime):

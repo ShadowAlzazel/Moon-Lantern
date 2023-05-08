@@ -35,15 +35,17 @@ class CameraGroup(pygame.sprite.Group):
         self.display_surface = pygame.display.get_surface()
 
     async def camera_draw(self):
+        # Each layer should be run blocking and not async
         for layer in LAYERS.values():
             self.current_layer = layer
             render_tasks = [asyncio.create_task(self.render_sprite(sprite)) for sprite in self.sprites()]
             done, pending = await asyncio.wait(render_tasks)
 
+            # Note: Remove ALL async def if running this
             #for sprite in self.sprites():
             #   if sprite.zlayer == layer:
             #    self.display_surface.blit(sprite.image, sprite.rect)
-    
+
     async def render_sprite(self, sprite):
         if sprite.zlayer == self.current_layer:
             self.display_surface.blit(sprite.image, sprite.rect)
