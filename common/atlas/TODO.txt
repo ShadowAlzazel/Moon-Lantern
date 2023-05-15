@@ -1,0 +1,7 @@
+have asset proccesor look for permutations in common/atals directory
+if exists then use file, if not create new one based on texture name 
+
+1. Look in common/atlas for a pemutation json with matchig file name 'source.[name].json'
+2a. IF found, look for template in assets/atlas '[name].map'
+2b. Get palette from template and match with the index of palatte from source. (Use pygame surface methods)
+2c. Create a temporary object in memory with the applied palatte.

@@ -1,4 +1,6 @@
-import pygame, sys
+import pygame
+import sys
+import asyncio
 from settings import *
 from level import Level
 
@@ -10,7 +12,7 @@ class Game:
         self.clock = pygame.time.Clock()
         self.level = Level()
 
-    def run(self):
+    async def run(self):
         while True:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -18,10 +20,10 @@ class Game:
                     sys.exit()
 
             dtime = self.clock.tick(FPS) / 1000
-            self.level.run(dtime)
+            await self.level.run(dtime)
             pygame.display.update()
 
 
 if __name__ == '__main__':
     game = Game()
-    game.run()
+    asyncio.run(game.run())
