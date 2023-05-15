@@ -60,7 +60,7 @@ class Player(pygame.sprite.Sprite):
     def use_item(self):
         print("IDLE")  
 
-
+    # TODO: FIX
     def use_tool(self):
         if self.inventory.slots['main_hand']:
             print("USE TOOL")
