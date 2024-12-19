@@ -30,7 +30,8 @@ LAYERS = {
     'structure_bottom': 5,
     'floor_plant': 6,
     'main': 9,
-    'structure_top': 10,
-    'fruit_plant': 11,
-    'rain_drops': 12,
+    'entities': 10,
+    'structure_top': 11,
+    'fruit_plant': 12,
+    'rain_drops': 13,
 }

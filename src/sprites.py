@@ -15,8 +15,8 @@ class Flora(Generic):
         self.rect = self.image.get_rect(topleft=pos)
         self.zlayer = zlayer
 
-class Fauna(Generic):
-    def __init__(self, pos, surface, groups, zlayer=LAYERS['main']):
+class Entities(Generic):
+    def __init__(self, pos, surface, groups, zlayer=LAYERS['entities']):
         super().__init__(pos, surface, groups)
         self.image = surface 
         self.rect = self.image.get_rect(topleft=pos)

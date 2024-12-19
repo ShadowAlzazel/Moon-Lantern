@@ -1,9 +1,9 @@
 {
-    "weapon_data": {
-        "sword": {
-            "cooldown": 100,
-            "damage": 15,
-            "type": "sword"
-        }
+  "weapon_data": {
+    "sword": {
+      "cooldown": 100,
+      "damage": 15,
+      "type": "sword"
     }
+  }
 }
