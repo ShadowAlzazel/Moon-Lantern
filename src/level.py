@@ -17,7 +17,7 @@ class Level:
         self.player = Player((360, 640), self.all_sprites)
         Generic(
             pos=(0,0),
-            surface=pygame.image.load('assets/environment/temp_floor.png').convert_alpha(),
+            surface=pygame.image.load('assets/environment/floor_primordial.png').convert_alpha(),
             groups=self.all_sprites,
             zlayer=LAYERS['ground']    
         )
