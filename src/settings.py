@@ -28,7 +28,7 @@ LAYERS = {
     'soil_water': 3,
     'rain_floor': 4,
     'structure_bottom': 5,
-    'floor_plant': 6,
+    'plant': 6,
     'main': 9,
     'entities': 10,
     'structure_top': 11,

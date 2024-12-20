@@ -1,5 +1,8 @@
-from os import walk
 import pygame
+
+from os import walk
+from PIL import Image
+from typing import Dict, List, Tuple, Union
 
 def import_folder(path): 
     surface_list = []
@@ -10,3 +13,18 @@ def import_folder(path):
             surface_list.append(image_surface)
 
     return surface_list
+
+def import_image(path: str) -> Image.Image:
+    image = Image.open(path)
+    return image
+
+def import_surface(path: str) -> pygame.Surface:
+    image_surface = pygame.image.load(path).convert_alpha()
+    return image_surface
+
+def image_to_surface(image: Image.Image) -> pygame.Surface:
+    pil_image = image.convert("RGBA")
+    raw_data = pil_image.tobytes()
+    # Create a Pygame Surface
+    surface = pygame.image.frombuffer(raw_data, pil_image.size, "RGBA")
+    return surface
