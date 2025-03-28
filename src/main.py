@@ -15,10 +15,23 @@ class Game:
     async def run(self):
         while True:
             for event in pygame.event.get():
+                # Quitting
                 if event.type == pygame.QUIT:
                     pygame.quit()
                     sys.exit()
 
+                # Zooming 
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_EQUALS or event.key == pygame.K_PLUS:
+                        # Zoom in
+                        new_zoom = self.level.all_sprites.zoom + 0.1
+                        self.level.all_sprites.set_zoom(new_zoom)
+                    elif event.key == pygame.K_MINUS:
+                        # Zoom out
+                        new_zoom = self.level.all_sprites.zoom - 0.1
+                        self.level.all_sprites.set_zoom(new_zoom)
+                
+            # Frame timer
             dtime = self.clock.tick(FPS) / 1000
             await self.level.run(dtime)
             pygame.display.update()

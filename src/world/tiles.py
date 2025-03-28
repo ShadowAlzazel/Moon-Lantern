@@ -14,10 +14,11 @@ class World:
         self.tile_height = self.tile_surface.get_height()
         
         # Define how many tiles wide/high the grid is
-        self.grid_width = 20
-        self.grid_height = 20
+        self.grid_width = 30 # COLUMNS 
+        self.grid_height = 20 # ROWS
         
         # Create the isometric grid
+        self.tile_grid = [[0 for _ in range(self.grid_width)] for _ in range(self.grid_height)]
         self.create_isometric_grid()
         
     def create_isometric_grid(self):
@@ -30,7 +31,7 @@ class World:
                 # Convert cartesian (row, col) to isometric coordinates
                 iso_x, iso_y = self.cart_to_iso(col, row)
                 # Create the tile and add it to the groups
-                Tile(
+                self.tile_grid[row][col] = Tile(
                     pos=(iso_x, iso_y),
                     surface=self.tile_surface,
                     groups=self.groups,

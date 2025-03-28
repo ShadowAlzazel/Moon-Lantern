@@ -38,8 +38,31 @@ class CameraGroup(pygame.sprite.Group):
         super().__init__()
         self.display_surface = pygame.display.get_surface()
         self.offset = pygame.math.Vector2()
-
+        # Zoom 
+        self.zoom = 1.0 
+        self.min_zoom = 0.5
+        self.max_zoom = 4.0
+        
+    def set_zoom(self, zoom_value): 
+        self.zoom = max(self.min_zoom, min(self.max_zoom, zoom_value))
+        
+    # Drawing to the screen
     async def custom_draw(self, player):
+        """
+            Draws all sprites relative to the player's position, 
+            ensuring the player stays centered on screen when zooming.
+        """
+        # Compute the 'zoomed' center of the player in world space 
+        # (i.e., player world position * zoom).
+        player_center_world = pygame.math.Vector2(player.rect.center)  # Player center in world coords
+        player_center_zoomed = player_center_world * self.zoom
+        
+        # The screen center in pixel coords (constant).
+        screen_center = pygame.math.Vector2(
+            self.display_surface.get_width() / 2,
+            self.display_surface.get_height() / 2
+        )
+        
         # Offset 
         self.offset.x = player.rect.centerx - SCREEN_WIDTH / 2
         self.offset.y = player.rect.centery - SCREEN_HEIGHT / 2
@@ -47,27 +70,40 @@ class CameraGroup(pygame.sprite.Group):
         # Each layer should be run blocking and not async
         for layer in LAYERS.values():
             self.current_layer = layer
-            render_tasks = [asyncio.create_task(self.render_sprite(sprite)) for sprite in self.sprites()]
+            render_tasks = []
+            for sprite in self.sprites():
+                render_tasks.append(asyncio.create_task(self.render_sprite(sprite)))
             done, pending = await asyncio.wait(render_tasks)
-            # Note: Remove ALL async def if running this
-            #for sprite in self.sprites():
-            #   if sprite.zlayer == layer:
-            #    self.display_surface.blit(sprite.image, sprite.rect)
+
 
     # Main rendering function
     async def render_sprite(self, sprite):
-        if sprite.zlayer == self.current_layer:
-            offset_rect = sprite.rect.copy()
-            offset_rect.center -= self.offset
-            
-            # Culling 
-            if (offset_rect.right < 0 or offset_rect.left > SCREEN_WIDTH or 
-                offset_rect.bottom < 0 or offset_rect.top > SCREEN_HEIGHT):
-                return
-            # Display tile if not Culled
-            self.display_surface.blit(sprite.image, offset_rect) # Expensive to run
-            
+        # Skip offlayer
+        if sprite.zlayer != self.current_layer:
+            return
+        
+        # Basic offsets
+        offset_rect = sprite.rect.copy()
+        offset_rect.center -= self.offset
+        
+        # Zooming to position 
+        offset_rect.centerx *= self.zoom 
+        offset_rect.centery *= self.zoom 
+        
+        # Scale sprite images 
+        width = int(sprite.rect.width * self.zoom)
+        height = int(sprite.rect.height * self.zoom)
+        scaled_image = pygame.transform.scale(sprite.image, (width, height))
+        # Adjust rect
+        scaled_rect = scaled_image.get_rect(center=offset_rect.center)
+        
+        # Culling check, skip blitting off-screen
+        if (offset_rect.right < 0 or offset_rect.left > SCREEN_WIDTH or 
+            offset_rect.bottom < 0 or offset_rect.top > SCREEN_HEIGHT):
+            return
+        
+        # Display tile 
+        self.display_surface.blit(scaled_image, offset_rect) # Expensive to run 
         # TODO Optimizations
         # IF sprite outside of render range(display) to not blit
-        
         # Create a map of static objects
