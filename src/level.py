@@ -74,7 +74,6 @@ class CameraGroup(pygame.sprite.Group):
                 render_tasks.append(asyncio.create_task(self.render_sprite(sprite)))
             done, pending = await asyncio.wait(render_tasks)
 
-
     # Main rendering function
     async def render_sprite(self, sprite):
         # Skip offlayer
@@ -97,6 +96,10 @@ class CameraGroup(pygame.sprite.Group):
         scaled_rect = scaled_image.get_rect(center=final_center)
         
         # Culling check, skip blitting off-screen
+        screen_rect = self.display_surface.get_rect()
+        if not screen_rect.colliderect(scaled_rect):
+            print(f'Skipping sprite in layer [{sprite.zlayer}] with pos({sprite.pos})')
+            return
         if (scaled_rect.right < 0 or scaled_rect.left > SCREEN_WIDTH or 
             scaled_rect.bottom < 0 or scaled_rect.top > SCREEN_HEIGHT):
             return
