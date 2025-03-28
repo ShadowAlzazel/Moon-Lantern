@@ -7,15 +7,22 @@ class World:
     def __init__(self, groups):
         self.groups = groups
         
+        # TODO: Custom iter for each block
         # Load the grass block image
         tile_image_path = f"assets/textures/tiles/grass_block.png"
-        self.tile_surface = pygame.image.load(tile_image_path).convert_alpha()
-        self.tile_width = self.tile_surface.get_width()
-        self.tile_height = self.tile_surface.get_height()
+        self.image_surface = pygame.image.load(tile_image_path).convert_alpha()
+        self.image_width = self.image_surface.get_width()
+        self.image_height = self.image_surface.get_height()
+        
+        # Scale the image by 
+        _scaled_size = 4
+        self.tile_width = self.image_width * _scaled_size
+        self.tile_height = self.image_height * _scaled_size
+        self.tile_surface = pygame.transform.scale(self.image_surface, (self.tile_width, self.tile_height))
         
         # Define how many tiles wide/high the grid is
         self.grid_width = 30 # COLUMNS 
-        self.grid_height = 20 # ROWS
+        self.grid_height = 30 # ROWS
         
         # Create the isometric grid
         self.tile_grid = [[0 for _ in range(self.grid_width)] for _ in range(self.grid_height)]
@@ -38,7 +45,6 @@ class World:
                     zlayer=LAYERS['ground']
                 )         
         
-    
     def cart_to_iso(self, x, y):
         """
             Convert cartesian grid coordinates (x, y) to isometric screen coordinates.
@@ -48,3 +54,4 @@ class World:
         iso_x = (x - y) * (self.tile_width // 2)
         iso_y = (x + y) * (self.tile_height // 4)
         return iso_x, iso_y
+    

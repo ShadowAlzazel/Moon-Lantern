@@ -63,9 +63,8 @@ class CameraGroup(pygame.sprite.Group):
             self.display_surface.get_height() / 2
         )
         
-        # Offset 
-        self.offset.x = player.rect.centerx - SCREEN_WIDTH / 2
-        self.offset.y = player.rect.centery - SCREEN_HEIGHT / 2
+        # Camera and world Offset 
+        self.offset = player_center_zoomed - screen_center
         
         # Each layer should be run blocking and not async
         for layer in LAYERS.values():
@@ -82,28 +81,28 @@ class CameraGroup(pygame.sprite.Group):
         if sprite.zlayer != self.current_layer:
             return
         
-        # Basic offsets
-        offset_rect = sprite.rect.copy()
-        offset_rect.center -= self.offset
+        # Get the sprite world pos, then convert/zoom it
+        sprite_center_world = pygame.math.Vector2(sprite.rect.center)
+        sprite_center_zoomed = sprite_center_world * self.zoom
+        final_center = sprite_center_zoomed - self.offset
         
-        # Zooming to position 
-        offset_rect.centerx *= self.zoom 
-        offset_rect.centery *= self.zoom 
-        
-        # Scale sprite images 
+        # Scale the sprite image by the zoom
         width = int(sprite.rect.width * self.zoom)
         height = int(sprite.rect.height * self.zoom)
+        if width <= 0 or height <= 0:
+            return  # Avoid scaling to negative or zero
+ 
         scaled_image = pygame.transform.scale(sprite.image, (width, height))
         # Adjust rect
-        scaled_rect = scaled_image.get_rect(center=offset_rect.center)
+        scaled_rect = scaled_image.get_rect(center=final_center)
         
         # Culling check, skip blitting off-screen
-        if (offset_rect.right < 0 or offset_rect.left > SCREEN_WIDTH or 
-            offset_rect.bottom < 0 or offset_rect.top > SCREEN_HEIGHT):
+        if (scaled_rect.right < 0 or scaled_rect.left > SCREEN_WIDTH or 
+            scaled_rect.bottom < 0 or scaled_rect.top > SCREEN_HEIGHT):
             return
         
         # Display tile 
-        self.display_surface.blit(scaled_image, offset_rect) # Expensive to run 
+        self.display_surface.blit(scaled_image, scaled_rect) # Expensive to run 
         # TODO Optimizations
         # IF sprite outside of render range(display) to not blit
         # Create a map of static objects
