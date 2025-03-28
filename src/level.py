@@ -3,6 +3,7 @@ import asyncio
 from settings import *
 from player import Player
 from sprites import Generic
+from world.tiles import World
 
 class Level:
     def __init__(self):
@@ -15,12 +16,14 @@ class Level:
     def setup(self):
         self.current_layer = LAYERS['ground']
         self.player = Player((360, 640), self.all_sprites)
-        Generic(
-            pos=(0,0),
-            surface=pygame.image.load('assets/textures/environment/floor_primordial.png').convert_alpha(),
-            groups=self.all_sprites,
-            zlayer=LAYERS['ground']    
-        )
+        
+        self.world = World(self.all_sprites)
+        #Generic(
+        #    pos=(0,0),
+        #    surface=pygame.image.load('assets/textures/environment/floor_primordial.png').convert_alpha(),
+        #    groups=self.all_sprites,
+        #    zlayer=LAYERS['ground']    
+        #)
 
     async def run(self, dtime):
         # Basic bg
@@ -56,6 +59,12 @@ class CameraGroup(pygame.sprite.Group):
         if sprite.zlayer == self.current_layer:
             offset_rect = sprite.rect.copy()
             offset_rect.center -= self.offset
+            
+            # Culling 
+            if (offset_rect.right < 0 or offset_rect.left > SCREEN_WIDTH or 
+                offset_rect.bottom < 0 or offset_rect.top > SCREEN_HEIGHT):
+                return
+            # Display tile if not Culled
             self.display_surface.blit(sprite.image, offset_rect) # Expensive to run
             
         # TODO Optimizations

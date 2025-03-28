@@ -9,6 +9,14 @@ class Generic(pygame.sprite.Sprite):
         self.rect = self.image.get_rect(topleft=pos)
         self.zlayer = zlayer
 
+class Tile(Generic):
+    """A single tile in the world"""
+    def __init__(self, pos, surface, groups, zlayer=LAYERS['ground']):
+        super().__init__(pos, surface, groups)
+        self.image = surface 
+        self.rect = self.image.get_rect(topleft=pos)
+        self.zlayer = zlayer
+
 class Particle(Generic):
     def __init__(self, pos, surf, groupgs, z, duration=200):
         super().__init__(pos, surface, groups)
