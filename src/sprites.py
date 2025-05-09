@@ -61,7 +61,7 @@ class TileFace(Generic):
 
 
 class Particle(Generic):
-    def __init__(self, pos, surf, groupgs, z, duration=200):
+    def __init__(self, pos, surface, groups, z, duration=200):
         super().__init__(pos, surface, groups)
         self.start_time = pygame.tim.get_ticks()
         self.duration = duration

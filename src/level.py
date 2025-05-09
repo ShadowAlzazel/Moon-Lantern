@@ -69,16 +69,23 @@ class CameraGroup(pygame.sprite.Group):
             self.display_surface.get_height() / 2
         )
         
+        # Camera and world Offset - this is the key to keeping player centered
+        self.offset = player_center_zoomed - screen_center
+        
         # Screen rect for culling
         screen_rect = self.display_surface.get_rect()
         
         # Sort sprites by their z-layer for proper drawing order
         # This ensures tiles are drawn from back to front
         for sprite in sorted(self.sprites(), key=lambda sprite: sprite.zlayer):
+            # Skip empty tile containers (they won't have images)
+            if not hasattr(sprite, 'image') or sprite.image is None:
+                continue
+            
             # Get the sprite world pos, then convert/zoom it
-            sprite_center_world = pygame.math.Vector2(sprite.rect.center)
-            sprite_center_zoomed = sprite_center_world * self.zoom
-            final_center = sprite_center_zoomed - self.offset
+            sprite_center_world = pygame.math.Vector2(sprite.rect.topleft)
+            sprite_pos_zoomed = sprite_center_world * self.zoom
+            final_pos = sprite_pos_zoomed - self.offset
             
             # Scale the sprite image by the zoom (with caching)
             width = int(sprite.rect.width * self.zoom)
@@ -95,8 +102,8 @@ class CameraGroup(pygame.sprite.Group):
                 # Cache the scaled image for future use
                 self.scaled_cache[cache_key] = scaled_image
             
-            # Adjust rect
-            scaled_rect = scaled_image.get_rect(center=final_center)
+            # Adjust rect for positioning
+            scaled_rect = scaled_image.get_rect(topleft=final_pos)
             
             # Skip rendering if sprite is outside the screen
             if not screen_rect.colliderect(scaled_rect):
