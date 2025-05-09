@@ -4,6 +4,8 @@ import asyncio
 from settings import *
 from level import Level
 
+FPS_ON = True
+
 class Game:
     def __init__(self):
         pygame.init()
@@ -11,6 +13,7 @@ class Game:
         pygame.display.set_caption("Moon Lantern")
         self.clock = pygame.time.Clock()
         self.level = Level()
+        self.font = pygame.font.SysFont(None, 30)  # Default font, size 30
 
     async def run(self):
         while True:
@@ -34,6 +37,13 @@ class Game:
             # Frame timer
             dtime = self.clock.tick(FPS) / 1000
             await self.level.run(dtime)
+            
+            # Draw FPS
+            if FPS_ON:
+                fps = self.clock.get_fps()
+                fps_text = self.font.render(f'FPS: {fps:.1f}', True, pygame.Color('white'))
+                self.screen.blit(fps_text, (10, 10))
+            
             pygame.display.update()
 
 

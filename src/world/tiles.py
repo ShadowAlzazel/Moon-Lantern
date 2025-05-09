@@ -23,8 +23,8 @@ class TileRenderer:
         
         # MOVE TO SEPERATE WORLD CLASS !!
         # Define how many tiles wide/high the grid is
-        self.grid_width = 5 # COLUMNS 
-        self.grid_height = 5 # ROWS
+        self.grid_width = 25 # COLUMNS 
+        self.grid_height = 25 # ROWS
         
         # Create the isometric grid
         # TODO!!! CHange to noise based procedurally generate later.
