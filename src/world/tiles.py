@@ -1,10 +1,13 @@
-import pygame 
-import os
-from sprites import Generic, Tile, TileFace
-from settings import *
 
-class TileRenderer: 
-    
+import pygame
+import os
+from sprites import TileFace
+from settings import LAYERS
+
+class TileRenderer:
+    """
+    Handles the rendering of tile faces and face culling.
+    """
     def __init__(self, groups):
         self.groups = groups
         # Scale the image by 
@@ -13,24 +16,8 @@ class TileRenderer:
         self.tile_width = 32 * self._scaled_size  # Base texture is 32x32
         self.tile_height = 32 * self._scaled_size
         
-        # Load the grass block image
-        # TODO: Different block types!!!
-        tile_image_path = f"assets/textures/tiles/grass_block.png"
-        self.image_surface = pygame.image.load(tile_image_path).convert_alpha()
-        
-        # Extract and create the three faces from the source texture
+        # Load the grass block image faces
         self.faces = self._load_face_textures()
-        
-        # MOVE TO SEPERATE WORLD CLASS !!
-        # Define how many tiles wide/high the grid is
-        self.grid_width = 25 # COLUMNS 
-        self.grid_height = 25 # ROWS
-        
-        # Create the isometric grid
-        # TODO!!! CHange to noise based procedurally generate later.
-        self.tile_grid = [[0 for _ in range(self.grid_width)] for _ in range(self.grid_height)]
-        self.create_isometric_grid()
-      
         
     def _load_face_textures(self):
         """Load the pre-processed face textures"""
@@ -65,9 +52,8 @@ class TileRenderer:
                 print(f"Warning: Face texture {face_path} not found!")
         
         return faces
-        
-        
-    def _create_face(self, tile, face_type):
+    
+    def create_face(self, tile, face_type):
         """Create a face for the given tile if it should be visible"""
         face_surface = self.faces[face_type]
         
@@ -109,77 +95,14 @@ class TileRenderer:
         )
         
         # Add the face to the tile
-        tile.add_face(face_type, face) 
-        
-    def create_isometric_grid(self):
-        """
-        Creates an isometric grid with face-based tiles and handles face culling.
-        """
-        # First, create all tile positions in the grid
-        for row in range(self.grid_height):
-            for col in range(self.grid_width):
-                # Convert cartesian (row, col) to isometric coordinates
-                iso_x, iso_y = self.cart_to_iso(col, row)
-                
-                # Create a new tile at this position
-                self.tile_grid[row][col] = Tile(
-                    pos=(iso_x, iso_y),
-                    groups=self.groups,
-                    zlayer=LAYERS['ground'],
-                    grid_pos=(col, row)
-                )
-        
-        # Now that all tiles are created, determine face visibility for each tile
-        for row in range(self.grid_height):
-            for col in range(self.grid_width):
-                tile = self.tile_grid[row][col]
-                
-                # Check if neighboring tiles exist to determine which faces to show
-                has_north = row > 0
-                has_east = col < self.grid_width - 1
-                has_south = row < self.grid_height - 1
-                has_west = col > 0
-                
-                # Always show the top face
-                self._create_face(tile, 'top')
-                
-                # Show left face only if no tile to the west
-                if not has_east:
-                    self._create_face(tile, 'right')
-                
-                # Show right face only if no tile to the south
-                if not has_south:
-                    self._create_face(tile, 'left') 
+        tile.add_face(face_type, face)
         
     def cart_to_iso(self, x, y):
         """
-            Convert cartesian grid coordinates (x, y) to isometric screen coordinates.
-            Adjust these formulas to get the spacing/look you desire.
+        Convert cartesian grid coordinates (x, y) to isometric screen coordinates.
+        Adjust these formulas to get the spacing/look you desire.
         """
         # Basic isometric transform
         iso_x = (x - y) * (self.tile_width // 2)
         iso_y = (x + y) * (self.tile_height // 4)
         return iso_x, iso_y
-    
-    def get_neighboring_tiles(self, col, row):
-        """Returns neighboring tiles in the grid"""
-        neighbors = {}
-        
-        # Check all four directions
-        directions = {
-            'north': (0, -1),
-            'east': (1, 0),
-            'south': (0, 1),
-            'west': (-1, 0)
-        }
-        
-        for direction, (dx, dy) in directions.items():
-            new_col, new_row = col + dx, row + dy
-            
-            # Check if the new position is within grid bounds
-            if 0 <= new_col < self.grid_width and 0 <= new_row < self.grid_height:
-                neighbors[direction] = self.tile_grid[new_row][new_col]
-            else:
-                neighbors[direction] = None
-                
-        return neighbors
