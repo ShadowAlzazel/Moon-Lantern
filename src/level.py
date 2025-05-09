@@ -3,7 +3,7 @@ import asyncio
 from settings import *
 from player import Player
 from sprites import Generic
-from world.tiles import World
+from world.world import World
 
 class Level:
     def __init__(self):
@@ -42,6 +42,11 @@ class CameraGroup(pygame.sprite.Group):
         self.zoom = 1.0 
         self.min_zoom = 0.5
         self.max_zoom = 4.0
+        # Cache for scaled images
+        self.scaled_cache = {}
+        # Track visible sprites for optimization
+        self.visible_sprites = []
+        
         
     def set_zoom(self, zoom_value): 
         self.zoom = max(self.min_zoom, min(self.max_zoom, zoom_value))
@@ -51,6 +56,7 @@ class CameraGroup(pygame.sprite.Group):
         """
             Draws all sprites relative to the player's position, 
             ensuring the player stays centered on screen when zooming.
+            Only visible sprites will be rendered.
         """
         # Compute the 'zoomed' center of the player in world space 
         # (i.e., player world position * zoom).
@@ -63,49 +69,38 @@ class CameraGroup(pygame.sprite.Group):
             self.display_surface.get_height() / 2
         )
         
-        # Camera and world Offset 
-        self.offset = player_center_zoomed - screen_center
-        
-        # Each layer should be run blocking and not async
-        for layer in LAYERS.values():
-            self.current_layer = layer
-            render_tasks = []
-            for sprite in self.sprites():
-                render_tasks.append(asyncio.create_task(self.render_sprite(sprite)))
-            done, pending = await asyncio.wait(render_tasks)
-
-    # Main rendering function
-    async def render_sprite(self, sprite):
-        # Skip offlayer
-        if sprite.zlayer != self.current_layer:
-            return
-        
-        # Get the sprite world pos, then convert/zoom it
-        sprite_center_world = pygame.math.Vector2(sprite.rect.center)
-        sprite_center_zoomed = sprite_center_world * self.zoom
-        final_center = sprite_center_zoomed - self.offset
-        
-        # Scale the sprite image by the zoom
-        width = int(sprite.rect.width * self.zoom)
-        height = int(sprite.rect.height * self.zoom)
-        if width <= 0 or height <= 0:
-            return  # Avoid scaling to negative or zero
- 
-        scaled_image = pygame.transform.scale(sprite.image, (width, height))
-        # Adjust rect
-        scaled_rect = scaled_image.get_rect(center=final_center)
-        
-        # Culling check, skip blitting off-screen
+        # Screen rect for culling
         screen_rect = self.display_surface.get_rect()
-        if not screen_rect.colliderect(scaled_rect):
-            print(f'Skipping sprite in layer [{sprite.zlayer}] with pos({sprite.pos})')
-            return
-        if (scaled_rect.right < 0 or scaled_rect.left > SCREEN_WIDTH or 
-            scaled_rect.bottom < 0 or scaled_rect.top > SCREEN_HEIGHT):
-            return
         
-        # Display tile 
-        self.display_surface.blit(scaled_image, scaled_rect) # Expensive to run 
-        # TODO Optimizations
-        # IF sprite outside of render range(display) to not blit
-        # Create a map of static objects
+        # Sort sprites by their z-layer for proper drawing order
+        # This ensures tiles are drawn from back to front
+        for sprite in sorted(self.sprites(), key=lambda sprite: sprite.zlayer):
+            # Get the sprite world pos, then convert/zoom it
+            sprite_center_world = pygame.math.Vector2(sprite.rect.center)
+            sprite_center_zoomed = sprite_center_world * self.zoom
+            final_center = sprite_center_zoomed - self.offset
+            
+            # Scale the sprite image by the zoom (with caching)
+            width = int(sprite.rect.width * self.zoom)
+            height = int(sprite.rect.height * self.zoom)
+            if width <= 0 or height <= 0:
+                continue  # Avoid scaling to negative or zero
+            
+            # Use cached scaled image if available
+            cache_key = (id(sprite.image), width, height)
+            if cache_key in self.scaled_cache:
+                scaled_image = self.scaled_cache[cache_key]
+            else:
+                scaled_image = pygame.transform.scale(sprite.image, (width, height))
+                # Cache the scaled image for future use
+                self.scaled_cache[cache_key] = scaled_image
+            
+            # Adjust rect
+            scaled_rect = scaled_image.get_rect(center=final_center)
+            
+            # Skip rendering if sprite is outside the screen
+            if not screen_rect.colliderect(scaled_rect):
+                continue
+            
+            # Display the sprite
+            self.display_surface.blit(scaled_image, scaled_rect)

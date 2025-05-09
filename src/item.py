@@ -1,4 +1,5 @@
 import pygame
+from support import import_folder
 
 class Item(pygame.sprite.Sprite):
     def __init__(self, pos, group, name="item"):

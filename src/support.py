@@ -1,12 +1,13 @@
 import pygame
+import os
+import sys
 
-from os import walk
 from PIL import Image
 from typing import Dict, List, Tuple, Union
 
 def import_folder(path): 
     surface_list = []
-    for _, __, img_files in walk(path):
+    for _, __, img_files in os.walk(path):
         for image in img_files:
             full_path = f'{path}/{image}'
             image_surface = pygame.image.load(full_path).convert_alpha()
