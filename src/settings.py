@@ -4,6 +4,7 @@ from pygame.math import Vector2
 SCREEN_WIDTH = 1920
 SCREEN_HEIGHT= 1080
 TILE_SIZE = 64
+_ASSET_SIZE = 16 # A 16x16 is the standard size
 
 # Framerate
 FPS = 120
@@ -28,7 +29,7 @@ LAYERS = {
     'soil_water': 3,
     'rain_floor': 4,
     'structure_bottom': 5,
-    'floor_plant': 6,
+    'plant': 6,
     'main': 9,
     'entities': 10,
     'structure_top': 11,

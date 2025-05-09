@@ -1,0 +1,7 @@
+{
+    "model": {
+        "type": "mapped",
+        "texture": "item/axe",
+        "map": "material/iridium"
+    }
+}

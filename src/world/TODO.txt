@@ -1,0 +1,7 @@
+The World is split into various noise regions 
+
+These noises make specific biomes based on preset parameters (biomes)
+
+Then there is some preset shape for groups of tiles 
+
+and the tiles can have (features)
