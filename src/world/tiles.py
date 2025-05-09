@@ -16,12 +16,12 @@ class TileRenderer:
         self.tile_width = 32 * self._scaled_size  # Base texture is 32x32
         self.tile_height = 32 * self._scaled_size
         
-        # Load the grass block image faces
-        self.faces = self._load_face_textures()
+        # Load the tile textures for different types
+        self.tile_textures = self._load_tile_textures()
         
-    def _load_face_textures(self):
-        """Load the pre-processed face textures"""
-        faces = {}
+    def _load_tile_textures(self):
+        """Load textures for different tile types"""
+        textures = {}
         face_dir = "assets/textures/faces"
         
         # Check if faces directory exists
@@ -33,29 +33,53 @@ class TileRenderer:
             # with the split textures
             splitter.split_all_textures()
         
-        # Load the face textures for grass block
-        base_name = "red_grass_block"
+        # Load textures for different tile types
+        tile_types = ['grass_block', 'red_grass_block']  # Add more as needed
         
-        for face_type in ['top', 'left', 'right']:
-            face_path = os.path.join(face_dir, f"{base_name}_{face_type}.png")
-            if os.path.exists(face_path):
-                # Load the face texture
-                face_surface = pygame.image.load(face_path).convert_alpha()
-                # Scale it
-                scaled_face = pygame.transform.scale(
-                    face_surface, 
-                    (face_surface.get_width() * self._scaled_size, 
-                     face_surface.get_height() * self._scaled_size)
-                )
-                faces[face_type] = scaled_face
-            else:
-                print(f"Warning: Face texture {face_path} not found!")
+        for tile_type in tile_types:
+            textures[tile_type] = {}
+            for face_type in ['top', 'left', 'right']:
+                face_path = os.path.join(face_dir, f"{tile_type}_{face_type}.png")
+                if os.path.exists(face_path):
+                    # Load the face texture
+                    face_surface = pygame.image.load(face_path).convert_alpha()
+                    # Scale it
+                    scaled_face = pygame.transform.scale(
+                        face_surface, 
+                        (face_surface.get_width() * self._scaled_size, 
+                         face_surface.get_height() * self._scaled_size)
+                    )
+                    textures[tile_type][face_type] = scaled_face
+                else:
+                    print(f"Warning: Face texture {face_path} not found! Using fallback.")
+                    # Use red_grass_block as fallback if the texture is missing
+                    fallback_path = os.path.join(face_dir, f"red_grass_block_{face_type}.png")
+                    if os.path.exists(fallback_path):
+                        face_surface = pygame.image.load(fallback_path).convert_alpha()
+                        # Scale it
+                        scaled_face = pygame.transform.scale(
+                            face_surface, 
+                            (face_surface.get_width() * self._scaled_size, 
+                             face_surface.get_height() * self._scaled_size)
+                        )
+                        textures[tile_type][face_type] = scaled_face
         
-        return faces
+        return textures
     
-    def create_face(self, tile, face_type):
+    def create_face(self, tile, face_type, tile_type=None):
         """Create a face for the given tile if it should be visible"""
-        face_surface = self.faces[face_type]
+        if tile_type is None:
+            tile_type = "grass_block"  # Default
+            
+        # If the tile type doesn't exist, use grass_block as fallback
+        if tile_type not in self.tile_textures:
+            tile_type = "grass_block"
+            
+        # Get the face texture for this tile type
+        face_surface = self.tile_textures[tile_type].get(face_type)
+        if not face_surface:
+            print(f"Warning: No texture for {tile_type}_{face_type}")
+            return
         
         # Calculate position offsets for the face based on the tile's position
         base_x, base_y = tile.pos
@@ -106,3 +130,18 @@ class TileRenderer:
         iso_x = (x - y) * (self.tile_width // 2)
         iso_y = (x + y) * (self.tile_height // 4)
         return iso_x, iso_y
+        
+    def iso_to_cart(self, iso_x, iso_y):
+        """
+        Convert isometric screen coordinates to cartesian grid coordinates.
+        This is the inverse of cart_to_iso.
+        """
+        # Inverse of isometric transform
+        half_tile_width = self.tile_width // 2
+        quarter_tile_height = self.tile_height // 4
+        
+        # Calculate grid coordinates
+        grid_y = (iso_y / quarter_tile_height - iso_x / half_tile_width) / 2
+        grid_x = (iso_y / quarter_tile_height + iso_x / half_tile_width) / 2
+        
+        return grid_x, grid_y

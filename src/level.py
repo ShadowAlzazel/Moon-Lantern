@@ -5,32 +5,40 @@ from player import Player
 from sprites import Generic
 from world.world import World
 
+SEED = 37
+
 class Level:
-    def __init__(self):
+    def __init__(self, game):
         self.display_surface = pygame.display.get_surface()
         # Sprite Groups
         self.all_sprites = CameraGroup()
         # Setup
-        self.setup()
+        self.game = game
+        self.setup(SEED)
 
-    def setup(self):
+    def setup(self, seed=SEED):
         self.current_layer = LAYERS['ground']
-        self.player = Player((360, 640), self.all_sprites)
+        # Create the procedural world first so we can position the player on it
+        self.world = World(self.all_sprites, seed=seed)
         
-        self.world = World(self.all_sprites)
-        #Generic(
-        #    pos=(0,0),
-        #    surface=pygame.image.load('assets/textures/environment/floor_primordial.png').convert_alpha(),
-        #    groups=self.all_sprites,
-        #    zlayer=LAYERS['ground']    
-        #)
+        # Create the player at a good starting position
+        self.player = Player((640, 360), self.all_sprites)
+        
+        # Set initial chunk loading based on player position
+        self.world.update(self.player.rect.center)
+    
 
     async def run(self, dtime):
         # Basic bg
         self.display_surface.fill("black")
+        # Update the world based on player position
+        player_center_world = pygame.math.Vector2(self.player.rect.center)  # Player center in world coords
+        self.world.update(player_center_world)
         # Draw all sprites
         await self.all_sprites.custom_draw(self.player)
         self.all_sprites.update(dtime)
+        # Debug
+        self.game.debug.draw(self.world, self.player, self.all_sprites)
 
 
 class CameraGroup(pygame.sprite.Group):
@@ -50,6 +58,8 @@ class CameraGroup(pygame.sprite.Group):
         
     def set_zoom(self, zoom_value): 
         self.zoom = max(self.min_zoom, min(self.max_zoom, zoom_value))
+        # Clear the image cache when zooming
+        self.scaled_cache.clear()
         
     # Drawing to the screen
     async def custom_draw(self, player):

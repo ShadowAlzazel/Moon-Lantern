@@ -14,12 +14,13 @@ class Tile(pygame.sprite.Sprite):
     """
     A tile in the isometric world that can have up to three visible faces
     """
-    def __init__(self, pos, groups, zlayer=LAYERS['ground'], grid_pos=None):
+    def __init__(self, pos, groups, zlayer=LAYERS['ground'], grid_pos=None, tile_type="red_grass_block"):
         super().__init__(groups)
         self.pos = pos
         self.grid_pos = grid_pos  # Store the grid position (col, row)
         self.zlayer = zlayer
         self.groups = groups
+        self.tile_type = tile_type  # Store the type of tile
         
         # Store references to the faces of this tile
         self.faces = {
