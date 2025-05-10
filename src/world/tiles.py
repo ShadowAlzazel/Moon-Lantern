@@ -84,8 +84,14 @@ class TileRenderer:
         # Calculate position offsets for the face based on the tile's position
         base_x, base_y = tile.pos
         
-        # Adjust Z-ordering for proper overlapping
-        z_offset = 0
+        # Convert world position for z-ordering calculations
+        world_x, world_y = 0, 0
+        if tile.grid_pos:
+            world_x, world_y = tile.grid_pos
+        
+        # Calculate Z-ordering based on world position - this helps with chunk borders
+        # The formula ensures consistent z-ordering across chunk boundaries
+        base_z = (world_x + world_y) / 10000.0
         
         # Calculate offset based on the texture splitter's polygon definitions
         # These offsets should match the polygon coordinates used in TextureSplitter
@@ -95,18 +101,22 @@ class TileRenderer:
             offset_y = 0
             z_offset = 0.3  # Top face should be above side faces
         elif face_type == 'right':
-            # Left face should align with the left edge of the isometric tile
+            # Right face should align with the right edge of the isometric tile
             offset_x = 0
             offset_y = 0
-            z_offset = 0.2  # Left face above right face
+            z_offset = 0.2  # Right face above left face
         elif face_type == 'left':
-            # Right face should align with the right half of the isometric tile
+            # Left face should align with the left half of the isometric tile
             offset_x = 0
             offset_y = 0
-            z_offset = 0.1  # Right face at a middle z-level
+            z_offset = 0.1  # Left face at a lower z-level
         
-        # Calculate final position
+        # Calculate final position - using your original polygon coordinates
+        # Adjust if needed based on your sprite dimensions and hexagon model
         pos = (base_x + offset_x, base_y + offset_y)
+        
+        # Calculate final z-order that accounts for world position AND face type
+        final_z = LAYERS['ground'] + base_z + z_offset
         
         # Create the face sprite
         face = TileFace(
@@ -115,7 +125,7 @@ class TileRenderer:
             pos=pos,
             surface=face_surface,
             groups=tile.groups,
-            zlayer=LAYERS['ground'] + z_offset  # Add small offset for z-ordering
+            zlayer=final_z  # Z-ordering that respects world position
         )
         
         # Add the face to the tile
