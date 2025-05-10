@@ -13,7 +13,7 @@ class Game:
         self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
         pygame.display.set_caption("Moon Lantern")
         self.clock = pygame.time.Clock()
-        self.debug = DebugOverlay(self.screen)
+        self.debug = DebugOverlay(self.screen, self.clock)
         self.level = Level(game=self)
         self.font = pygame.font.SysFont(None, 30)  # Default font, size 30
 
@@ -45,13 +45,6 @@ class Game:
             # Frame timer
             dtime = self.clock.tick(FPS) / 1000
             await self.level.run(dtime)
-            
-            # Draw FPS
-            if False:
-                fps = self.clock.get_fps()
-                fps_text = self.font.render(f'FPS: {fps:.1f}', True, pygame.Color('white'))
-                self.screen.blit(fps_text, (10, 10))
-            
             pygame.display.update()
 
 
