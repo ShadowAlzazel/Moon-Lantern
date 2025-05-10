@@ -51,19 +51,15 @@ class Chunk:
         """Generate all tiles for this chunk using noise."""
         if self.is_generated:
             return
-            
-        # Create tiles for the entire chunk
+        # First pass - create all tiles but don't add faces yet
         for local_y in range(self.chunk_size):
             for local_x in range(self.chunk_size):
                 # Convert to world coordinates
                 world_x, world_y = self.chunk_to_world_coords(local_x, local_y)
-                
                 # Get tile type based on noise
                 tile_type = self.noise_gen.get_tile_type(world_x, world_y)
-                
                 # Calculate isometric position
                 iso_x, iso_y = self.tile_renderer.cart_to_iso(world_x, world_y)
-                
                 # Create the tile
                 new_tile = Tile(
                     pos=(iso_x, iso_y),
@@ -72,12 +68,81 @@ class Chunk:
                     grid_pos=(world_x, world_y),
                     tile_type=tile_type
                 )
-                
                 # Store the tile
                 self.tiles[(world_x, world_y)] = new_tile
+        
+        
+        # Now during second pass - add faces while checking adjacent chunks
+        for world_pos, tile in self.tiles.items():
+            world_x, world_y = world_pos
+            
+            # Create top face for all tiles
+            self.tile_renderer.create_face(tile, 'top', tile.tile_type)
+            
+            # Check if we need side faces - this needs to check both within this chunk AND in adjacent chunks
+            # East neighbor
+            east_pos = (world_x + 1, world_y)
+            east_neighbor = self.tiles.get(east_pos)
+            
+            # If no east neighbor in this chunk, check if there's a tile in an adjacent chunk
+            if east_neighbor is None:
+                # This position might be in a neighboring chunk
+                east_chunk_pos = self.get_chunk_pos_for_world_pos(east_pos[0], east_pos[1])
                 
-        # We'll add faces after all tiles are created
+                # Only add the face if there's definitely no tile there
+                if not self.tile_exists_at_world_pos(east_pos[0], east_pos[1]):
+                    self.tile_renderer.create_face(tile, 'right', tile.tile_type)
+            
+            # South neighbor - same logic
+            south_pos = (world_x, world_y + 1)
+            south_neighbor = self.tiles.get(south_pos)
+            
+            if south_neighbor is None:
+                # This position might be in a neighboring chunk
+                south_chunk_pos = self.get_chunk_pos_for_world_pos(south_pos[0], south_pos[1])
+                
+                # Only add the face if there's definitely no tile there 
+                if not self.tile_exists_at_world_pos(south_pos[0], south_pos[1]):
+                    self.tile_renderer.create_face(tile, 'left', tile.tile_type)
+                
         self.is_generated = True
+    
+    def get_chunk_pos_for_world_pos(self, world_x, world_y):
+        """Get the chunk coordinates that would contain the given world position."""
+        chunk_x = world_x // self.chunk_size
+        chunk_y = world_y // self.chunk_size
+        return chunk_x, chunk_y
+        
+    def tile_exists_at_world_pos(self, world_x, world_y):
+        """Check if a tile exists at the specified world position, including in other chunks."""
+        # First check within this chunk
+        if (world_x, world_y) in self.tiles:
+            return True
+            
+        # Not in this chunk, so it would be in another chunk
+        # But we don't have direct access to other chunks here
+        # Instead, we'll use a clever trick for chunk border logic
+        
+        # If this position is exactly on a chunk boundary, assume it exists
+        # This prevents creating side faces at chunk boundaries
+        chunk_x, chunk_y = self.get_chunk_pos_for_world_pos(world_x, world_y)
+        
+        # If it's a different chunk than this one
+        if chunk_x != self.chunk_x or chunk_y != self.chunk_y:
+            # Calculate the closest edge of that chunk
+            chunk_edge_x = chunk_x * self.chunk_size
+            chunk_edge_y = chunk_y * self.chunk_size
+            
+            # If this is exactly on the edge of a chunk, 
+            # assume there is a tile there to prevent visible seams
+            if world_x == chunk_edge_x or world_y == chunk_edge_y:
+                return True
+            
+            # For positions inside other chunks, use noise to determine if a tile would exist there
+            # This ensures consistency across chunk boundaries
+            return self.noise_gen.get_tile_type(world_x, world_y) != None
+            
+        return False
     
     def update_faces(self, chunk_manager):
         """
@@ -136,8 +201,8 @@ class ChunkManager:
     """
     def __init__(self, groups: pygame.sprite.Group, seed=None):
         self.groups = groups
-        self.chunk_size = 8  # Size of each chunk in tiles
-        self.render_distance = 3  # How many chunks to render in each direction
+        self.chunk_size = 8  # Size of each chunk in tiles (reduced from 16)
+        self.render_distance = 2  # How many chunks to render in each direction
         
         # Create tile renderer and noise generator
         self.tile_renderer = TileRenderer(groups=groups)
@@ -164,11 +229,27 @@ class ChunkManager:
             chunk = self.chunks[chunk_pos]
             return chunk.get_tile_at(world_x, world_y)
         return None
+        
+    def check_tile_at(self, world_x: int, world_y: int) -> bool:
+        """Check if a tile exists at the specified world coordinates without loading chunks."""
+        chunk_pos = self.get_chunk_pos_for_world_pos(world_x, world_y)
+        
+        # If chunk is loaded, check the actual tile
+        if chunk_pos in self.chunks:
+            chunk = self.chunks[chunk_pos]
+            return (world_x, world_y) in chunk.tiles
+        
+        # If chunk isn't loaded, use noise to predict if a tile would exist there
+        # This ensures consistent chunk borders
+        return self.noise_gen.get_tile_type(world_x, world_y) != None
     
     def update_chunks(self, player_pos: Tuple[int, int]):
         """Update loaded chunks based on player position."""
-        # Convert player's isometric position to world coordinates
+        # Convert player's isometric position to approximate world coordinates
         player_iso_x, player_iso_y = player_pos
+        
+        # Use the tile renderer to convert isometric to cartesian
+        # This gives us more accurate world coordinates for the player
         grid_x, grid_y = self.tile_renderer.iso_to_cart(player_iso_x, player_iso_y)
         player_world_x, player_world_y = int(grid_x), int(grid_y)
         
@@ -193,15 +274,29 @@ class ChunkManager:
         # Determine which chunks to unload
         chunks_to_unload = set(self.chunks.keys()) - chunks_to_load
         
-        # Unload chunks
-        for chunk_pos in chunks_to_unload:
-            if chunk_pos in self.chunks:
-                self.chunks[chunk_pos].unload()
-                del self.chunks[chunk_pos]
+        # First load new chunks at chunk boundaries
+        # This ensures borders are generated properly with knowledge of neighboring chunks
+        border_chunks = []
+        new_inner_chunks = []
         
-        # First, generate all chunks without faces
-        chunks_created = False
         for chunk_pos in chunks_to_load:
+            if chunk_pos not in self.chunks:
+                # Check if this is a border chunk (has neighbors)
+                is_border = False
+                for dx, dy in [(1,0), (-1,0), (0,1), (0,-1)]:
+                    neighbor_pos = (chunk_pos[0] + dx, chunk_pos[1] + dy)
+                    if neighbor_pos in self.chunks:
+                        is_border = True
+                        break
+                
+                # Sort chunks so borders are generated first
+                if is_border:
+                    border_chunks.append(chunk_pos)
+                else:
+                    new_inner_chunks.append(chunk_pos)
+        
+        # First create all the chunks without generating them
+        for chunk_pos in border_chunks + new_inner_chunks:
             if chunk_pos not in self.chunks:
                 new_chunk = Chunk(
                     chunk_pos=chunk_pos,
@@ -211,11 +306,17 @@ class ChunkManager:
                     groups=self.groups
                 )
                 self.chunks[chunk_pos] = new_chunk
-                new_chunk.generate()
-                chunks_created = True
-                
-        # If any new chunks were created, we need to update all faces in the visible area
-        if chunks_created:
-            # Now update faces for all chunks, considering neighbors
-            for chunk in self.chunks.values():
-                chunk.update_faces(self)
+        
+        # Now generate all the chunks
+        for chunk_pos in border_chunks + new_inner_chunks:
+            self.chunks[chunk_pos].generate()
+        
+        # update faces on *all* loaded chunks
+        for chunk in self.chunks.values():
+            chunk.update_faces(self)
+        
+        # Unload chunks after loading new ones to avoid flickering at borders
+        for chunk_pos in chunks_to_unload:
+            if chunk_pos in self.chunks:
+                self.chunks[chunk_pos].unload()
+                del self.chunks[chunk_pos]
