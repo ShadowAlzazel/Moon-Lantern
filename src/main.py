@@ -13,7 +13,7 @@ class Game:
         self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
         pygame.display.set_caption("Moon Lantern")
         self.clock = pygame.time.Clock()
-        self.debug = DebugOverlay(self.screen, self.clock)
+        self.debug = DebugOverlay(game=self)
         self.level = Level(game=self)
         self.font = pygame.font.SysFont(None, 30)  # Default font, size 30
 

@@ -4,9 +4,10 @@ class DebugOverlay:
     """
     Debug overlay that displays information about chunks, player position, etc.
     """
-    def __init__(self, screen, clock):
-        self.screen = screen
-        self.clock = clock
+    def __init__(self, game):
+        self.game = game
+        self.screen = game.screen
+        self.clock = game.clock
         self.font = pygame.font.SysFont(None, 24)
         self.enabled = True
         self.show_chunk_borders = True
@@ -31,6 +32,9 @@ class DebugOverlay:
         # Get chunk position
         chunk_x, chunk_y = world.chunk_manager.get_chunk_pos_for_world_pos(int(grid_x), int(grid_y))
         
+        # Get biome
+        biome_at = self.game.level.world.noise_gen.get_biome_at(grid_x, grid_y)
+        
         # FPS
         fps = self.clock.get_fps() 
         
@@ -40,6 +44,7 @@ class DebugOverlay:
             f"Player ISO: ({player_iso_x}, {player_iso_y})",
             f"Player Grid: ({grid_x:.1f}, {grid_y:.1f})",
             f"Chunk: ({chunk_x}, {chunk_y})",
+            f"Biome: ({biome_at})",
             f"Loaded Chunks: {len(world.chunk_manager.chunks)}",
             f"Zoom: {camera_group.zoom:.1f}",
             f"Sprites: {len(camera_group.sprites())}"

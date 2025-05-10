@@ -1,5 +1,6 @@
 import pygame
 from world.chunks import ChunkManager
+from world.noise import NoiseGenerator
 
 class World:
     """
@@ -9,8 +10,10 @@ class World:
     def __init__(self, groups: pygame.sprite.Group, seed=None):
         self.groups = groups
         
+        # Create the noise generator
+        self.noise_gen = NoiseGenerator(seed=seed)
         # Create the chunk manager
-        self.chunk_manager = ChunkManager(groups=groups, seed=seed)
+        self.chunk_manager = ChunkManager(groups=groups, noise_gen=self.noise_gen)
         
     def update(self, player_pos):
         """

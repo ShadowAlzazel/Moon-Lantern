@@ -199,14 +199,14 @@ class ChunkManager:
     """
     Handles loading and unloading chunks around the player.
     """
-    def __init__(self, groups: pygame.sprite.Group, seed=None):
+    def __init__(self, groups: pygame.sprite.Group, noise_gen: NoiseGenerator):
         self.groups = groups
         self.chunk_size = 8  # Size of each chunk in tiles (reduced from 16)
         self.render_distance = 2  # How many chunks to render in each direction
         
         # Create tile renderer and noise generator
-        self.tile_renderer = TileRenderer(groups=groups)
-        self.noise_gen = NoiseGenerator(seed=seed)
+        self.tile_renderer: TileRenderer = TileRenderer(groups=groups)
+        self.noise_gen: NoiseGenerator = noise_gen
         
         # Store loaded chunks
         self.chunks: Dict[Tuple[int, int], Chunk] = {}
